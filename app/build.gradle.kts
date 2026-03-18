@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.webapk.app0000"
+    namespace = "com.webapk.shell"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -24,6 +24,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
