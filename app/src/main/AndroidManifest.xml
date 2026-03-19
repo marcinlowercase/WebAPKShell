@@ -12,7 +12,7 @@
         android:theme="@style/Theme.WebAPKShell" >
         <activity
             android:name="com.webapk.shell.MainActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:theme="@android:style/Theme.Black.NoTitleBar"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
