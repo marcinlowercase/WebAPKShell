@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.webapk.app0000"
+        applicationId = "com.webapk.application.template.placeholder.namexx"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
