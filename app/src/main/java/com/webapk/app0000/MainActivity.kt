@@ -18,21 +18,32 @@ class MainActivity : Activity() {
             try {
                 val jsonStr = assets.open("config.json").bufferedReader().use { it.readText() }
                 val jsonObj = JSONObject(jsonStr)
-
-                val url = jsonObj.getString("url")
                 val hostPackage = jsonObj.optString("host", "marcinlowercase.a")
-                val profileId = jsonObj.optString("profileId", "")
-                val pwaIconUrl = jsonObj.optString("iconUrl", "")
+                val isFullBrowser = jsonObj.optBoolean("isFullBrowser", false)
+                val intent: Intent
 
-                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                intent.putExtra("is_pwa", true)
-                intent.putExtra("pwa_icon_url", pwaIconUrl)
 
-                if (profileId.isNotEmpty()) {
-                    intent.putExtra("profileId", profileId)
+                if (isFullBrowser) {
+                    intent = packageManager.getLaunchIntentForPackage(hostPackage)?.apply {
+                        flags = flags and Intent.FLAG_ACTIVITY_NEW_TASK.inv()
+                    } ?: Intent(Intent.ACTION_MAIN).apply {
+                        setPackage(hostPackage)
+                        addCategory(Intent.CATEGORY_LAUNCHER)
+                    }
+                } else {
+                    val url = jsonObj.getString("url")
+                    intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                    val profileId = jsonObj.optString("profileId", "")
+                    val pwaIconUrl = jsonObj.optString("iconUrl", "")
+
+                    intent.putExtra("is_pwa", true)
+                    intent.putExtra("pwa_icon_url", pwaIconUrl)
+
+                    if (profileId.isNotEmpty()) {
+                        intent.putExtra("profileId", profileId)
+                    }
+                    intent.setPackage(hostPackage)
                 }
-
-                intent.setPackage(hostPackage)
 
                 // Launch the Browser directly on top of this Shell App
                 startActivityForResult(intent, 1)
