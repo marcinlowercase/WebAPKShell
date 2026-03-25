@@ -12,31 +12,40 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Only launch the Browser if this is the very first time the task is created!
-        // If the OS restores this background app from memory later, we don't want to duplicate the window.
+        // THE GHOST KILLER: Check if we were woken up just to die!
+        if (intent?.getBooleanExtra("kill_shell", false) == true) {
+            finishAndRemoveTask()
+            exitProcess(0)
+            return
+        }
+
         if (savedInstanceState == null) {
             try {
                 val jsonStr = assets.open("config.json").bufferedReader().use { it.readText() }
                 val jsonObj = JSONObject(jsonStr)
+
                 val hostPackage = jsonObj.optString("host", "marcinlowercase.a")
+                val activityName = "marcinlowercase.a.MainActivity"
                 val isFullBrowser = jsonObj.optBoolean("isFullBrowser", false)
+
+                val pwaName = jsonObj.optString("name", "")
+                val pwaIconUrl = jsonObj.optString("iconUrl", "")
+
                 val intent: Intent
 
-
                 if (isFullBrowser) {
-                    intent = packageManager.getLaunchIntentForPackage(hostPackage)?.apply {
-                        flags = flags and Intent.FLAG_ACTIVITY_NEW_TASK.inv()
-                    } ?: Intent(Intent.ACTION_MAIN).apply {
-                        setPackage(hostPackage)
-                        addCategory(Intent.CATEGORY_LAUNCHER)
-                    }
+                    intent = Intent()
+                    intent.setClassName(hostPackage, activityName)
+                    intent.putExtra("is_cloned_browser", true)
+                    intent.putExtra("pwa_name", pwaName)
+                    intent.putExtra("pwa_icon_url", pwaIconUrl)
                 } else {
                     val url = jsonObj.getString("url")
                     intent = Intent(Intent.ACTION_VIEW, url.toUri())
                     val profileId = jsonObj.optString("profileId", "")
-                    val pwaIconUrl = jsonObj.optString("iconUrl", "")
 
                     intent.putExtra("is_pwa", true)
+                    intent.putExtra("pwa_name", pwaName)
                     intent.putExtra("pwa_icon_url", pwaIconUrl)
 
                     if (profileId.isNotEmpty()) {
@@ -45,24 +54,25 @@ class MainActivity : Activity() {
                     intent.setPackage(hostPackage)
                 }
 
-                // Launch the Browser directly on top of this Shell App
                 startActivityForResult(intent, 1)
             } catch (e: Exception) {
                 e.printStackTrace()
-                finish() // Only close if something crashed
+                finish()
             }
         }
-
-        // --- THE MULTI-WINDOW & RECENTS NAME FIX ---
-        // Notice we DO NOT call finish() here!
-        // By keeping this invisible Shell App alive at the bottom of the stack,
-        // the Android OS natively considers the Shell App to be the "owner" of this window.
-        // It will permanently use the PWA's true Name and Icon in the Recent Apps screen automatically!
     }
+
+    // Catch the kill missile if the app is already running
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.getBooleanExtra("kill_shell", false) == true) {
+            finishAndRemoveTask()
+            exitProcess(0)
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        // When the user presses "Back" in the Browser, it finishes and returns here.
-        // Now the Shell App knows it's time to die, and takes the entire Task with it securely!
         finishAndRemoveTask()
         exitProcess(0)
     }
